@@ -1,0 +1,521 @@
+"""AI 辩论引擎 — 多模型分工：猎手(35B)/账房(9B)/守夜人(9B)/裁判(R1推理) """
+import json
+import asyncio
+from typing import Dict, Any, List
+from app.config import settings
+from app.utils.logger import logger
+
+# ===== 提示词模板 =====
+
+HUNTER_PROMPT = """你是「猎手」— 短线交易专家 (持股1-5天)。
+风格: 激进、追求快速收益、善于捕捉技术突破和资金异动、能承受较高波动。
+分析重点: MA5/MA10突破、RSI(14)超买超卖、量比异动、分钟级资金流、题材热点轮动、龙虎榜信号。
+
+⚠️ 重要：你的受众是股票交易新手。请在分析中使用通俗语言，避免晦涩术语。当你必须使用专业术语时，请在 knowledge_tips 中用简单比喻解释。
+⚠️ 铁律：止损/止盈必须给出基于技术面的具体价格数字（如"止损: 15.20元，即5日均线下方2%"），或给出分层级别（如"第一止损位: 15.50，第二止损位: 14.80"），绝对不允许只讲原则性建议。买入区间也必须是具体价格范围。
+⚠️ 铁律：股票代码必须是6位数字的真实A股代码（沪市60xxxx/688xxx/689xxx，深市00xxxx/30xxxx），不允许编造代码。如果不确定代码，请从新闻和市场数据中搜索确认。九号公司代码是689009（不是900090），中芯国际代码是688981。
+⚠️ 数据来源：请在analysis末尾用一行注明所依据的主要数据来源（如：腾讯行情/东财板块/财联社新闻等）。
+
+【今日要闻】
+{news_context}
+
+【市场数据】
+{market_data}
+
+【持仓情况】
+{holdings_data}
+
+请给出「猎手」视角的短线分析 (JSON格式，不要code fence):
+{{
+    "perspective": "短线进攻型",
+    "analysis": "你的短线分析（面向新手，用通俗语言）",
+    "market_view": "对大盘的短线判断",
+    "sector_focus": ["看好的短线板块"],
+    "holdings_advice": [{{"code": "代码", "name": "名称", "action": "买入/持有/减仓/卖出", "reason": "短线理由", "beginner_note": "给新手的解释"}}],
+    "recommendations": [{{"code": "代码", "name": "名称", "reason": "短线推荐理由", "buy_range": "买入区间(具体价格)", "stop_loss": "止损价(具体价位或分层)", "target": "目标价(具体价位)", "level": "高/中/低", "beginner_guide": "新手解读", "data_source": "数据来源"}}],
+    "knowledge_tips": [{{"term": "术语名", "explanation": "通俗解释"}}],
+    "risk_appetite": "高",
+    "conviction": 1-10
+}}
+"""
+
+ACCOUNTANT_PROMPT = """你是「账房」— 中低频波段交易专家 (持股1-4周)。
+风格: 稳健、注重估值和趋势、追求确定性和风险收益比。
+分析重点: PE/PB估值分位、ROE/现金流质量、MA20/MA60趋势、北向资金中期流向、融资余额变化、行业景气度。
+
+⚠️ 重要：你的受众是股票交易新手。请用通俗语言解释。
+⚠️ 铁律：止损/止盈必须给出基于技术面的具体价格数字或分层级别（如"止损位: 14.30元，即MA20均线支撑位"），绝对不允许只讲原则性建议。买入区间也必须是具体价格范围。
+⚠️ 铁律：股票代码必须是6位真实A股代码（沪市60/688/689开头，深市00/30开头），不确定时从市场数据中搜索确认，严禁编造。
+⚠️ 数据来源：请在analysis末尾用一行注明所依据的主要数据来源。
+
+【今日要闻】
+{news_context}
+
+【市场数据】
+{market_data}
+
+【持仓情况】
+{holdings_data}
+
+请给出「账房」视角的中低频分析 (JSON格式，不要code fence):
+{{
+    "perspective": "中低频稳健型",
+    "analysis": "你的中低频分析（面向新手）",
+    "market_view": "对大盘的中期判断",
+    "sector_focus": ["看好的中低频板块"],
+    "holdings_advice": [{{"code": "代码", "name": "名称", "action": "买入/持有/减仓/卖出", "reason": "中低频理由", "beginner_note": "给新手的解释"}}],
+    "recommendations": [{{"code": "代码", "name": "名称", "reason": "中低频推荐理由", "buy_range": "买入区间(具体价格)", "stop_loss": "止损价(具体价位,较宽)", "target": "目标价(具体价位)", "level": "高/中/低", "beginner_guide": "新手解读", "data_source": "数据来源"}}],
+    "knowledge_tips": [{{"term": "术语名", "explanation": "通俗解释"}}],
+    "risk_appetite": "中",
+    "conviction": 1-10
+}}
+"""
+
+GUARDIAN_PROMPT = """你是「守夜人」— 风控专家 (短线+中低频双轨风控)。
+风格: 极度谨慎、风控优先、保本第一。
+分析重点: 短线止损位/仓位上限/涨跌停风险 + 中低频估值泡沫/趋势破坏/系统性风险。
+
+⚠️ 重要：用通俗语言解释风险，新手能理解。
+⚠️ 铁律：止损建议必须给出具体价格数字（如"短线止损: 15.20元，中低频止损: 14.50元"），不允许只说"注意风险"之类的空话。
+⚠️ 铁律：股票代码必须是6位真实A股代码，严禁编造。
+
+【今日要闻】
+{news_context}
+
+【市场数据】
+{market_data}
+
+【持仓情况】
+{holdings_data}
+
+请给出「守夜人」视角的双轨风控分析 (JSON格式，不要code fence):
+{{
+    "perspective": "双轨风控型",
+    "analysis": "风控分析（面向新手）",
+    "short_term_risks": ["短线风险点"],
+    "mid_low_freq_risks": ["中低频风险点"],
+    "systemic_risks": ["系统性风险"],
+    "position_advice": "整体仓位建议",
+    "stop_loss_suggestions": [{{"code": "代码", "name": "名称", "short_term_stop": "短线止损(具体价位)", "mid_term_stop": "中低频止损(具体价位)", "beginner_note": "止损理由"}}],
+    "knowledge_tips": [{{"term": "术语", "explanation": "通俗解释"}}],
+    "risk_appetite": "低",
+    "conviction": 1-10
+}}
+"""
+
+AGGREGATOR_PROMPT = """你是「裁判」— AI 辩论聚合器。
+请综合三位专家的观点，给出最终的双轨决策。
+
+⚠️ 重要：受众是股票交易新手。最终决策要包含通俗易懂的解释。
+⚠️ 铁律：所有推荐股票的 stop_loss（止损价）、target（目标价）、buy_range（买入区间）必须是基于技术面的具体价格数字或分层价位，绝不允许给出"待观察"、"视情况而定"等模糊表述。如果没有足够数据给出具体价位，请在对应字段填写"数据不足，建议观望"，并在 reason 中说明原因。
+⚠️ 数据来源：请在 reasoning 末尾注明综合判断所依据的数据来源。
+{role_performance}
+
+【猎手(短线)】
+{hunter_view}
+
+【账房(中低频)】
+{accountant_view}
+
+【守夜人(双轨风控)】
+{guardian_view}
+
+⚠️ 反方自查（重要）：在给出最终决策前，你必须先做自我反方论证。
+对 short_term 和 mid_low_freq 中的每个推荐，先在思维中回答：
+1. 如果这个推荐是错的，最可能的原因是什么？
+2. 市场共识是否已经充分反映了这个逻辑？
+3. 这个判断"与众不同"的地方在哪里？怎样证明你的判断比共识更正确？
+
+你的 reasoning 字段中必须包含反方论证过程：
+"反方观点: XXXX → 为何不成立: XXXX"
+
+完成反方自查后，再按以下格式输出最终决策。
+{{
+    "final_decision": "买入/持有/减仓/卖出",
+    "confidence": 1-10,
+    "reasoning": "综合三位专家的核心理由（面向新手）",
+    "short_term": {{
+        "strategy": "短线策略总结 (1-5天)",
+        "action": "买入/持有/减仓/卖出",
+        "holdings_advice": [{{"code": "代码", "name": "名称", "action": "操作", "reason": "理由", "beginner_note": "新手提示"}}],
+        "recommendations": [{{"code": "代码", "name": "名称", "reason": "理由", "buy_range": "区间(具体价格)", "stop_loss": "止损(具体价位)", "target": "目标(具体价位)", "level": "高/中/低", "beginner_guide": "新手解读", "data_source": "数据来源"}}],
+        "key_risks": ["风险1"],
+        "beginner_summary": "给新手的一句话总结"
+    }},
+    "mid_low_freq": {{
+        "strategy": "中低频策略总结 (1-4周)",
+        "action": "买入/持有/减仓/卖出",
+        "holdings_advice": [{{"code": "代码", "name": "名称", "action": "操作", "reason": "理由", "beginner_note": "新手提示"}}],
+        "recommendations": [{{"code": "代码", "name": "名称", "reason": "理由", "buy_range": "区间(具体价格)", "stop_loss": "止损(具体价位,较宽)", "target": "目标(具体价位)", "level": "高/中/低", "beginner_guide": "新手解读", "data_source": "数据来源"}}],
+        "key_risks": ["风险1"],
+        "beginner_summary": "给新手的一句话总结"
+    }},
+    "position_advice": "仓位建议（附新手解释）",
+    "top_sectors": ["最看好的板块"],
+    "position_plan": {{
+        "total_capital": "账户总资金(元)",
+        "suggested_cash_pct": "建议保留现金比例(%), 如20%",
+        "entries": [
+            {{
+                "code": "股票代码",
+                "name": "股票名称",
+                "weight_pct": "占总资金比例(%)",
+                "phases": [
+                    {{"phase": 1, "pct": 50, "price": "第一批买入价(元)", "condition": "触发条件(如回踩5日线不破)"}},
+                    {{"phase": 2, "pct": 30, "price": "第二批买入价(元)", "condition": "触发条件(如放量突破前高)"}},
+                    {{"phase": 3, "pct": 20, "price": "第三批买入价(元)", "condition": "触发条件(如强势确认)"}}
+                ],
+                "stop_loss": {{"price": "具体止损价(元)", "pct": "止损幅度(%)", "reason": "止损理由"}},
+                "take_profit": [
+                    {{"target": "第一目标价(元)", "pct": 50, "profit_pct": "预期收益率(%)", "reason": "目标理由"}},
+                    {{"target": "第二目标价(元)", "pct": 50, "profit_pct": "预期收益率(%)", "reason": "目标理由"}}
+                ],
+                "max_hold_days": "最大持股天数",
+                "beginner_guide": "用通俗语言告诉新手如何操作这支股票, 什么时候买、买多少、什么时候卖"
+            }}
+        ]
+    }},
+    "backtest_summary": {{
+        "note": "策略回测结果(基于最近6个月历史数据模拟)",
+        "total_trades": "模拟交易次数",
+        "win_rate_pct": "胜率(%)",
+        "avg_profit_pct": "平均盈利(%)",
+        "avg_loss_pct": "平均亏损(%)",
+        "max_drawdown_pct": "最大回撤(%)",
+        "cumulative_return_pct": "累计收益率(%)",
+        "beginner_note": "给新手解读回测结果的一句话"
+    }},
+    "risk_summary": "主要风险总结（通俗易懂）",
+    "knowledge_corner": "【知识角】用3-5句话向新手解释今天分析中最关键的一个交易概念"
+}}
+"""
+
+
+class AIDebateEngine:
+    """AI 辩论引擎 — V6: DeepSeek 云端并行辩论
+
+    V6 模型分配:
+    - 猎手(短线)  →  DeepSeek v4-flash (cloud-hunter)
+    - 账房(中低频) →  DeepSeek v4-flash (cloud-accountant)
+    - 守夜人(风控) →  DeepSeek v4-flash (cloud-guardian)
+    - 裁判(综合)   →  Qwen-Plus (cloud-judge)   # 多模型多样性
+    - 输出校验     →  DeepSeek v4-flash (cloud-validator)
+    - 盘中快速     →  DeepSeek v4-flash (cloud-validator)
+
+    所有角色并行调用云端 API，总耗时 ~10-30s
+    裁判使用 Qwen-Plus 实现多模型多样性；其余角色使用 DeepSeek v4-flash
+    """
+
+    def __init__(self):
+        # v6: 全切 DeepSeek, 不再依赖 OllamaPool
+        self.pool = None
+
+    # ===== 模型选择 (统一通过 resolve_model) =====
+
+    def _hunter_model(self, fast: bool = False) -> str:
+        return "cloud-hunter"
+
+    def _accountant_model(self) -> str:
+        return "cloud-accountant"
+
+    def _guardian_model(self) -> str:
+        return "cloud-guardian"
+
+    def _aggregator_model(self, fast: bool = False) -> str:
+        return "cloud-judge"
+
+    def _validator_model(self) -> str:
+        return "cloud-validator"
+
+    def _is_reasoning(self, model: str) -> bool:
+        return "r1" in model.lower() or "reasoning" in model.lower() or "judge" in model.lower()
+
+    # ===== 核心方法 =====
+
+    async def _call_role(self, name: str, prompt: str, model: str, num_predict: int = 0, retries: int = 1, timeout: float = 120.0) -> Dict[str, Any]:
+        """V6: 调用 AI 角色 — cloud-* 走云端 API (DeepSeek/Qwen), 其他走 Ollama fallback"""
+        import json as _json
+        try:
+            # === DeepSeek 云端路由 ===
+            if model.startswith("cloud-"):
+                from app.ai.cloud_client import cloud
+                role_map = {
+                    "cloud-hunter": "analyst",
+                    "cloud-accountant": "analyst",
+                    "cloud-guardian": "analyst",
+                    "cloud-judge": "qwen_judge",
+                    "cloud-validator": "reporter",
+                }
+                cloud_role = role_map.get(model, "reporter")
+                try:
+                    result = await cloud.chat(cloud_role, [{"role": "user", "content": prompt}],
+                                             max_tokens=min(num_predict or 4096, 4096))
+                    content = result.get("content", "")
+                    if content:
+                        logger.info(f"DeepSeek {name} → 成功 ({len(content)} chars)")
+                        return {"content": content, "thinking": ""}
+                    else:
+                        logger.warning(f"DeepSeek {name} → 空内容, 返回降级")
+                        return {"content": _json.dumps({"error": "AI返回空内容", "degraded": True}, ensure_ascii=False), "thinking": ""}
+                except Exception as ce:
+                    logger.warning(f"DeepSeek 调用不可用({name}): {ce}")
+                    return {"content": _json.dumps({"error": "AI服务暂不可用", "degraded": True, "reason": str(ce)[:200]}, ensure_ascii=False), "thinking": ""}
+
+            # === Ollama fallback (极简, qwen3.5:3b) ===
+            logger.info(f"{name} → 模型: {model} (Ollama fallback)")
+            if self.pool is None:
+                logger.error(f"{name}: Ollama pool is None, cannot fallback")
+                return {"content": "", "thinking": ""}
+            kwargs = {}
+            if num_predict > 0:
+                kwargs["num_predict"] = num_predict
+            res = await self.pool.generate(name, prompt, **kwargs)
+            content = res.get("content", "")
+            thinking = res.get("thinking", "") or ""
+            if content:
+                return {"content": content, "thinking": thinking}
+            logger.warning(f"{name} Ollama 返回空内容")
+            return {"content": "", "thinking": thinking}
+        except Exception as e:
+            logger.error(f"{name} 调用异常: {e}")
+            return {"content": "", "thinking": ""}
+
+    async def debate(
+        self,
+        market_data: str,
+        holdings_data: str,
+        news_context: str = "",
+        role_performance: str = "",
+        overall_timeout: float = 300.0,
+    ) -> Dict[str, Any]:
+        """
+        三角色辩论 (双轨策略) — 并行调用，多模型分工
+
+        时间估算 (并行后):
+        - 猎手 (35B)  ~90s (120s 超时)
+        - 账房 (4B)   ~30s
+        - 守夜人 (4B) ~30s
+        - 裁判 (R1)   ~60s → 总计 ~150s (~2.5min, 含校验)
+
+        优化要点: 三角色并行调用(节省~40s), 每个角色 120s 超时, 整体 300s 超时
+        """
+        nc = news_context or "无今日要闻数据"
+        hunter_prompt = HUNTER_PROMPT.format(market_data=market_data, holdings_data=holdings_data, news_context=nc)
+        accountant_prompt = ACCOUNTANT_PROMPT.format(market_data=market_data, holdings_data=holdings_data, news_context=nc)
+        guardian_prompt = GUARDIAN_PROMPT.format(market_data=market_data, holdings_data=holdings_data, news_context=nc)
+
+        # v6: 三角色并行调用 (DeepSeek 云端支持高并发)
+        logger.info("辩论引擎: 并行调用猎手+账房+守夜人...")
+        hunter_task = self._call_role("猎手", hunter_prompt, self._hunter_model(), timeout=180.0)
+        accountant_task = self._call_role("账房", accountant_prompt, self._accountant_model(), timeout=120.0)
+        guardian_task = self._call_role("守夜人", guardian_prompt, self._guardian_model(), timeout=120.0)
+        hunter_res, accountant_res, guardian_res = await asyncio.gather(hunter_task, accountant_task, guardian_task)
+
+        hunter_view = hunter_res["content"]
+        accountant_view = accountant_res["content"]
+        guardian_view = guardian_res["content"]
+
+        if not any([hunter_view, accountant_view, guardian_view]):
+            logger.error("所有角色调用均失败")
+            return {"debate": {}, "final": {"final_decision": "AI 服务暂时不可用", "confidence": 0, "reasoning": "所有 AI 角色调用失败"}, "judge_thinking": ""}
+
+        # 裁判聚合 — 使用推理模型 (R1 需要更多 token 用于内部推理)
+        agg_prompt = AGGREGATOR_PROMPT.format(
+            role_performance=role_performance,
+            hunter_view=hunter_view or "无数据",
+            accountant_view=accountant_view or "无数据",
+            guardian_view=guardian_view or "无数据",
+        )
+        agg_model = self._aggregator_model(fast=False)
+        agg_num_predict = 8192 if self._is_reasoning(agg_model) else 0
+
+        judge_thinking = ""
+        try:
+            logger.info(f"裁判(盘前/复盘) → 模型: {agg_model} (timeout=180s)")
+            agg_kwargs = {}
+            if agg_num_predict > 0:
+                agg_kwargs["num_predict"] = agg_num_predict
+            agg_res = await self._call_role("裁判", agg_prompt, self._aggregator_model(), timeout=180.0)
+            content = agg_res.get("content", "")
+            if content:
+                final_decision = content
+                judge_thinking = agg_res.get("thinking", "")
+            else:
+                logger.warning("裁判聚合返回空内容")
+                final_decision = ""
+        except Exception as e:
+            logger.error(f"裁判聚合异常: {e}")
+            final_decision = ""
+
+        return {
+            "debate": {
+                "hunter": self._parse_json(hunter_view) if hunter_view else {"error": "调用失败"},
+                "accountant": self._parse_json(accountant_view) if accountant_view else {"error": "调用失败"},
+                "guardian": self._parse_json(guardian_view) if guardian_view else {"error": "调用失败"},
+            },
+            "final": self._parse_json(final_decision) if final_decision else {"final_decision": "聚合失败", "confidence": 0, "reasoning": "AI 裁判未返回有效结果"},
+            "judge_thinking": judge_thinking,
+            "quality": await self.validate_output(final_decision) if final_decision else {"pass": False, "score": 0, "issues": ["裁判未产出"], "summary": "无输出可校验"},
+        }
+
+    def _extract_content(self, result: Dict) -> str:
+        if result.get("success") and result.get("content"):
+            return result["content"]
+        return str(result)
+
+    async def debate_intraday(
+        self,
+        market_data: str,
+        holdings_data: str,
+        alerts_data: str = "",
+        news_context: str = "",
+    ) -> Dict[str, Any]:
+        """
+        盘中分析 — 单次快速调用 (9B 模型，~60s 完成)
+
+        设计原则:
+        - 交易时段速度优先，单次调用避免 Ollama 排队
+        - 精简提示词，聚焦可执行操作
+        - 保留一个知识点（今日一课）用于教育
+        """
+        nc = news_context or "无今日要闻数据"
+        compact_prompt = f"""你是A股盘中交易策略师。请基于实时数据，给出简洁可执行的操作策略。面向股票新手，用通俗语言。
+
+⚠️ 铁律：止损/止盈必须给出具体价格数字或分层价位，不允许只讲原则性建议。
+
+【今日要闻】
+{nc}
+
+【市场数据】
+{market_data}
+
+【持仓情况】
+{holdings_data}
+
+【风险告警】
+{alerts_data}
+
+请精简输出 (JSON格式，不要code fence，不要长篇大论):
+{{{{
+    "market_snapshot": "大盘一句话概括",
+    "overall_action": "积极做多/谨慎持仓/减仓观望/避险",
+    "confidence": 1-10,
+    "holdings_advice": [{{{{"code": "代码", "name": "名称", "action": "加仓/持有/减仓/做T/卖出", "reason": "一句话理由", "beginner_note": "一句话新手提示"}}}}],
+    "recommendations": [{{{{"code": "代码", "name": "名称", "reason": "理由", "buy_range": "买入区间(具体价格)", "stop_loss": "止损价(具体价位)", "target": "目标价(具体价位)", "level": "高/中/低", "data_source": "数据来源"}}}}],
+    "key_risks": ["1-2个主要风险"],
+    "position_advice": "仓位建议（一句话）",
+    "beginner_lesson": "【今日一课】用2-3句话解释一个关键概念"
+}}}}
+"""
+        try:
+            logger.info(f"盘中分析(极速) → 模型: {self._validator_model()}")
+            res = await self._call_role("盘中分析", compact_prompt, self._validator_model(), timeout=120.0)
+            content = res.get("content", "")
+            if content:
+                final = self._parse_json(content)
+                return {
+                    "debate": {},
+                    "final": final,
+                    "judge_thinking": "",
+                    "quality": await self.validate_output(content),
+                }
+            logger.warning("盘中分析返回空内容")
+        except Exception as e:
+            logger.error(f"盘中分析异常: {e}")
+
+        return {
+            "debate": {},
+            "final": {"final_decision": "AI 服务暂时不可用", "confidence": 0, "reasoning": "盘中分析调用失败"},
+            "judge_thinking": "",
+        }
+
+    async def validate_output(self, content: str) -> Dict[str, Any]:
+        """用云端模型校验 AI 输出是否包含具体投资建议"""
+        validator_prompt = f"""你是AI输出质量校验员。请检查以下AI投资建议是否包含具体的投资建议。
+检查标准：
+1. 是否推荐了具体的行业板块？
+2. 是否推荐了具体的个股（含代码）？
+3. 每支推荐股票是否包含：买入价格区间、止损价位、目标价位？
+
+【待校验内容】
+{content[:2000]}
+
+请输出JSON:
+{{{{"pass": true/false, "score": 1-10, "has_sectors": true/false, "has_stocks": true/false, "has_prices": true/false, "issues": ["问题"], "summary": "总结"}}}}
+"""
+        try:
+            from app.ai.cloud_client import cloud
+            result = await cloud.chat("reporter", [{"role": "user", "content": validator_prompt}], max_tokens=512)
+            text = result.get("content", "")
+            if text:
+                return self._parse_json(text)
+            return {"pass": True, "score": 5, "issues": ["校验调用失败"], "summary": "未能校验"}
+        except Exception as e:
+            logger.error(f"输出校验异常: {e}")
+            return {"pass": True, "score": 5, "issues": [str(e)], "summary": "校验异常"}
+
+    def _parse_json(self, text: str) -> Dict:
+        text = text.strip()
+
+        # 1. 直接解析纯 JSON
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+
+        import re as _re
+
+        # 2. 提取 markdown 代码块中的 JSON (```json ... ```)
+        for pattern in [
+            r'```(?:json|JSON)\s*\n(.*?)\n?\s*```',
+            r'```(.*?)```',
+        ]:
+            blocks = _re.findall(pattern, text, _re.DOTALL)
+            for block in blocks:
+                block = block.strip()
+                try:
+                    return json.loads(block)
+                except json.JSONDecodeError:
+                    pass
+
+        # 2b. 如果整个文本被 ``` 包裹
+        if text.startswith("```"):
+            first_nl = text.find('\n')
+            inner = text[first_nl + 1:] if first_nl > 0 else text[3:]
+            if inner.endswith("```"):
+                inner = inner[:-3]
+            inner = inner.strip()
+            try:
+                return json.loads(inner)
+            except json.JSONDecodeError:
+                pass
+
+        # 3. 查找最后一个平衡的 {...} 或 [...]（处理自然语言+JSON混合）
+        for pair in [('{', '}'), ('[', ']')]:
+            open_ch, close_ch = pair
+            positions = [i for i, ch in enumerate(text) if ch == open_ch]
+            for start in reversed(positions):
+                depth = 0
+                for end in range(start, len(text)):
+                    if text[end] == open_ch:
+                        depth += 1
+                    elif text[end] == close_ch:
+                        depth -= 1
+                        if depth == 0:
+                            try:
+                                return json.loads(text[start:end + 1])
+                            except json.JSONDecodeError:
+                                pass
+                            break
+
+        # 4. 兜底：找第一个 { 或 [
+        for c in ('{', '['):
+            start = text.find(c)
+            if start >= 0:
+                try:
+                    return json.loads(text[start:])
+                except json.JSONDecodeError:
+                    pass
+
+        logger.warning(f"AI输出JSON解析失败，保留原始文本(前200字符): {text[:200]}")
+        return {"raw": text}
