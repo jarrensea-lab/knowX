@@ -35,6 +35,14 @@ async def run_debate(analysis_report: dict, strategy_type: str = "premarket") ->
         holdings_str = json.dumps(holdings_str, ensure_ascii=False)
     elif isinstance(holdings_str, dict):
         holdings_str = json.dumps(holdings_str, ensure_ascii=False)
+    # 注入真实可用现金 — 从 analysis_report 中读取，否则从 market_data 原始数据读取
+    available_cash = analysis_report.get("available_cash", 0)
+    if not available_cash:
+        raw_market = analysis_report.get("_market_data_raw", {})
+        available_cash = raw_market.get("available_cash", 0)
+    holdings_data = holdings_str
+    if available_cash and available_cash > 0:
+        holdings_data += f"\n\n【账户资金】\n总资产: ¥{float(available_cash):,.2f}\n可用现金: ¥{float(available_cash):,.2f}\n"
     news_str = json.dumps(analysis_report.get("news", []), ensure_ascii=False)
 
     engine = AIDebateEngine()
@@ -51,7 +59,7 @@ async def run_debate(analysis_report: dict, strategy_type: str = "premarket") ->
     except Exception:
         pass
 
-    result = await engine.debate(market_data_str, holdings_str, news_str, role_performance=role_perf)
+    result = await engine.debate(market_data_str, holdings_data, news_str, role_performance=role_perf)
 
     final = result.get("final", {})
     short_term = final.get("short_term", {})
@@ -116,10 +124,11 @@ async def ask_role(role: str, question: str, context: str) -> dict:
         "accountant": ("账房", "估值和趋势分析师，风格稳健"),
         "guardian": ("守夜人", "风险控制专家，风格保守"),
         "judge": ("裁判", "综合决策者，负责最终判断"),
+        "researcher": ("Serenity·研究员", "产业链深度分析师，专注供应链和产业逻辑"),
     }
     name, persona = role_personas.get(role, (role, "AI 助手"))
     model_map = {"hunter": "cloud-hunter", "accountant": "cloud-accountant",
-                 "guardian": "cloud-guardian", "judge": "cloud-judge"}
+                 "guardian": "cloud-guardian", "researcher": "cloud-researcher", "judge": "cloud-judge"}
     model = model_map.get(role, "cloud-judge")
 
     prompt = f"""你是「{name}」——{persona}。

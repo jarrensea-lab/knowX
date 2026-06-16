@@ -251,7 +251,8 @@ async def _fetch_market_data() -> dict:
         db.close()
 
     return {"indices": indices, "sectors": [], "holdings": hd["holdings"],
-            "holdings_str": hd["holdings_str"], "news": []}
+            "holdings_str": hd["holdings_str"], "news": [],
+            "available_cash": hd.get("available_cash", 0)}
 
 def _feishu_webhook_push(title: str, content: str) -> bool:
     """同步飞书 webhook 推送（供 scheduler 线程使用）"""

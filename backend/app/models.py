@@ -317,7 +317,7 @@ class ReviewLog(Base):
 
 
 class DebateResult(Base):
-    """辩论质量追踪 — 记录四角色快照与回填实际收益"""
+    """辩论质量追踪 — 记录五角色快照与回填实际收益"""
     __tablename__ = "debate_results"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -325,7 +325,7 @@ class DebateResult(Base):
     debated_at = Column(DateTime, default=datetime.now)
     market_condition = Column(String(20), comment="trending_up/ranging/trending_down")
 
-    # 四角色快照
+    # 五角色快照
     hunter_decision = Column(String(10), comment="buy/sell/hold")
     hunter_conviction = Column(Integer, default=0)
     accountant_decision = Column(String(10))
@@ -334,6 +334,8 @@ class DebateResult(Base):
     guardian_risk_appetite = Column(String(10))
     judge_decision = Column(String(10))
     judge_confidence = Column(Integer, default=5)
+    researcher_decision = Column(String(10), comment="买入/卖出/持有/观望")
+    researcher_conviction = Column(Integer, default=0, comment="信心 1-10")
 
     # 推荐标的
     short_term_codes = Column(JSON, comment="短线推荐代码列表")

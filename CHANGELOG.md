@@ -1,6 +1,40 @@
 # 恭喜发财 更新日志
 
 
+## v7.1.0 (2026-06-16) — Serenity 产业链研究员实装 + 现金约束 + 推荐优化
+
+### 新功能
+- ✅ **Serenity·产业链研究员正式加入辩论**：第 4 个 AI 辩论角色完整实装
+  - `SERENITY_PROMPT` — 产业链深度分析 prompt（6 维度：图谱解构/供需缺口/技术壁垒/竞争格局/全球视野/政策传导）
+  - `_researcher_model()` — Qwen-Plus 路由，提供与 DeepSeek 猎手/账房/守夜人不同的模型视角
+  - `cloud-researcher` / `qwen-researcher` — 双路由支持（DeepSeek 降级 / Qwen-Plus 主用）
+  - 4 角色并行辩论 → 裁判(Qwen-Plus)聚合
+- ✅ **serenity_analyst.py** — 产业链知识引擎（586 行）：8 层价值链地图、16 个 A 股主题卡点、7 维评分卡、10 个红旗信号检测
+- ✅ **全流程跑通**：数据抓取 → 4 角色辩论(含 Serenity) → 策略生成 → 飞书推送
+
+### 优化
+- ✅ **现金约束实装**：修复了 `available_cash`（当前 ¥3,165.72）在数据管道中被丢弃的 bug
+  - `_fetch_market_data()` → `analysis.py` → `workshop.py` → `debate.py` 全链路透传
+  - 所有角色 prompt 现在可读取真实账户余额进行仓位约束
+- ✅ **Serenity 使用 Qwen-Plus**：多模型多样性（3 DeepSeek + 2 Qwen-Plus）
+- ✅ **推荐方向区分**：所有角色 prompt 强制输出「买入候选」和「卖出/规避候选」
+- ✅ **现价比对**：每支推荐标注当前价相对于买入区间的位（上沿/下沿/区间内）
+- ✅ **辩论记录扩展**：`debate_results` 表新增 `researcher_decision` + `researcher_conviction` 列
+
+### 技术细节
+- `backend/app/ai/debate.py` — SERENITY_PROMPT + 4 角色并行 + 模型路由
+- `backend/app/ai/serenity_analyst.py` — 产业链知识引擎（NEW）
+- `backend/app/ai/cloud_client.py` — Qwen-Plus 路由延伸
+- `backend/app/engine/workshop.py` — 现金注入 + ask_role 研究员路由
+- `backend/app/engine/analysis.py` — 原始数据透传
+- `backend/app/models.py` — DebateResult 扩展
+- `backend/app/engine/debate_tracker.py` — 研究员快照保存
+- `backend/main.py` — _fetch_market_data() cash 透传
+
+---
+# 恭喜发财 更新日志
+
+
 ## v7.0.0 (2026-06-15) — Serenity 产业链分析 + GitHub 发布
 
 ### 🎯 核心变化
