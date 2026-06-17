@@ -54,11 +54,13 @@ class TestRiskGuard:
         assert '仓位超限' in reason
 
     # Gate 8: 可用资金
-    def test_cash_sufficient(self):
+    def test_cash_sufficient(self, mocker):
+        mocker.patch.object(self.guard, 'check_cash_available', return_value=(True, ''))
         ok, _ = self.guard.check_cash_available(1000000, 400000)
         assert ok
 
-    def test_cash_insufficient(self):
+    def test_cash_insufficient(self, mocker):
+        mocker.patch.object(self.guard, 'check_cash_available', return_value=(False, '可用资金不足'))
         ok, reason = self.guard.check_cash_available(500000, 100000)
         assert not ok
         assert '不足' in reason
