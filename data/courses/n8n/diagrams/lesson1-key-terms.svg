@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 900 700" font-family="-apple-system, Noto Sans SC, sans-serif">
+  <rect width="900" height="700" fill="#1a1a2e"/>
+
+  <!-- Title -->
+  <text x="450" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#e0e0e0">n8n 核心术语 — 中英对照卡片</text>
+  <text x="450" y="64" text-anchor="middle" font-size="13" fill="#888">每次学一个新术语，都会反复出现，记住它</text>
+
+  <!-- Workflow = 工作流 -->
+  <g transform="translate(40, 90)">
+    <rect width="390" height="140" rx="10" fill="#16213e" stroke="#e94560" stroke-width="1.5"/>
+    <text x="20" y="30" font-size="16" font-weight="700" fill="#e94560">🔄 Workflow</text>
+    <text x="20" y="52" font-size="14" font-weight="600" fill="#ccc">工作流</text>
+    <text x="20" y="76" font-size="12" fill="#aaa">一串有顺序的任务，像一条流水线</text>
+    <text x="20" y="98" font-size="12" fill="#888">Example: "每天早上抓资讯并推送"</text>
+    <text x="20" y="120" font-size="11" fill="#666">发音: /ˈwɜːrkfloʊ/</text>
+  </g>
+
+  <!-- Trigger = 触发器 -->
+  <g transform="translate(40, 260)">
+    <rect width="390" height="140" rx="10" fill="#16213e" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="20" y="30" font-size="16" font-weight="700" fill="#f59e0b">⚡ Trigger</text>
+    <text x="20" y="52" font-size="14" font-weight="600" fill="#ccc">触发器</text>
+    <text x="20" y="76" font-size="12" fill="#aaa">启动工作流的"开关"</text>
+    <text x="20" y="98" font-size="12" fill="#888">Example: "每天9点"、"收到邮件"、"手动点击"</text>
+    <text x="20" y="120" font-size="11" fill="#666">发音: /ˈtrɪɡər/</text>
+  </g>
+
+  <!-- Node = 节点 -->
+  <g transform="translate(40, 430)">
+    <rect width="390" height="140" rx="10" fill="#16213e" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="20" y="30" font-size="16" font-weight="700" fill="#22c55e">🔧 Node</text>
+    <text x="20" y="52" font-size="14" font-weight="600" fill="#ccc">节点</text>
+    <text x="20" y="76" font-size="12" fill="#aaa">工作流里的每一个步骤，每个节点只做一件事</text>
+    <text x="20" y="98" font-size="12" fill="#888">Example: "HTTP 请求"、"AI 处理"、"发邮件"</text>
+    <text x="20" y="120" font-size="11" fill="#666">发音: /noʊd/</text>
+  </g>
+
+  <!-- Right side: Key concepts -->
+  <g transform="translate(460, 90)">
+    <rect width="400" height="200" rx="10" fill="#16213e" stroke="#0ea5e9" stroke-width="1.5"/>
+    <text x="20" y="30" font-size="16" font-weight="700" fill="#0ea5e9">📊 Execution</text>
+    <text x="20" y="52" font-size="14" font-weight="600" fill="#ccc">执行 / 运行</text>
+    <text x="20" y="76" font-size="12" fill="#aaa">点击"Execute"按钮，工作流就开始运行</text>
+    <text x="20" y="98" font-size="12" fill="#888">发音: /ˌeksɪˈkjuːʃən/</text>
+  </g>
+
+  <g transform="translate(460, 310)">
+    <rect width="400" height="200" rx="10" fill="#16213e" stroke="#8b5cf6" stroke-width="1.5"/>
+    <text x="20" y="30" font-size="16" font-weight="700" fill="#8b5cf6">🔗 Data Item</text>
+    <text x="20" y="52" font-size="14" font-weight="600" fill="#ccc">数据项</text>
+    <text x="20" y="76" font-size="12" fill="#aaa">节点间传递的数据包，每个节点接收后处理再传出</text>
+    <text x="20" y="98" font-size="12" fill="#888">Example: "一条 RSS 文章 = 1 个 data item"</text>
+    <text x="20" y="120" font-size="11" fill="#666">发音: /ˈdeɪtə ˈaɪtəm/</text>
+  </g>
+
+  <g transform="translate(460, 530)">
+    <rect width="400" height="140" rx="10" fill="#16213e" stroke="#e94560" stroke-width="1.5"/>
+    <text x="20" y="30" font-size="16" font-weight="700" fill="#e94560">🔐 Credentials</text>
+    <text x="20" y="52" font-size="14" font-weight="600" fill="#ccc">凭证 / 授权</text>
+    <text x="20" y="76" font-size="12" fill="#aaa">连接外部服务的登录信息（API Key、Token）</text>
+    <text x="20" y="98" font-size="12" fill="#888">Example: "OpenAI API Key"、"Notion Integration Key"</text>
+    <text x="20" y="120" font-size="11" fill="#666">发音: /kredənʃəlz/</text>
+  </g>
+</svg>

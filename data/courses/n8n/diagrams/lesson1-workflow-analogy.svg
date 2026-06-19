@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" font-family="-apple-system, Noto Sans SC, sans-serif">
+  <rect width="900" height="500" fill="#1a1a2e"/>
+
+  <text x="450" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#e0e0e0">工作流 = 餐厅点餐流水线</text>
+  <text x="450" y="64" text-anchor="middle" font-size="13" fill="#888">每个环节一个角色，数据像菜一样从这道菜传到那道菜</text>
+
+  <!-- Restaurant analogy -->
+  <rect x="40" y="100" width="200" height="100" rx="10" fill="#16213e" stroke="#e94560" stroke-width="1.5"/>
+  <text x="140" y="135" text-anchor="middle" font-size="32">👤</text>
+  <text x="140" y="160" text-anchor="middle" font-size="13" font-weight="600" fill="#e0e0e0">顾客下单</text>
+  <text x="140" y="185" text-anchor="middle" font-size="11" fill="#aaa">触发器 Trigger</text>
+  <text x="140" y="200" text-anchor="middle" font-size="10" fill="#666">"我要一份炒饭"</text>
+
+  <line x1="240" y1="150" x2="265" y2="150" stroke="#e94560" stroke-width="2" marker-end="url(#arrow1)"/>
+
+  <rect x="270" y="100" width="200" height="100" rx="10" fill="#16213e" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="370" y="135" text-anchor="middle" font-size="32">📋</text>
+  <text x="370" y="160" text-anchor="middle" font-size="13" font-weight="600" fill="#e0e0e0">接单</text>
+  <text x="370" y="185" text-anchor="middle" font-size="11" fill="#aaa">触发条件</text>
+  <text x="370" y="200" text-anchor="middle" font-size="10" fill="#666">"收到，炒饭一份"</text>
+
+  <line x1="470" y1="150" x2="495" y2="150" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow2)"/>
+
+  <rect x="500" y="100" width="200" height="100" rx="10" fill="#16213e" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="600" y="135" text-anchor="middle" font-size="32">🍳</text>
+  <text x="600" y="160" text-anchor="middle" font-size="13" font-weight="600" fill="#e0e0e0">厨师做菜</text>
+  <text x="600" y="185" text-anchor="middle" font-size="11" fill="#aaa">处理节点 Node</text>
+  <text x="600" y="200" text-anchor="middle" font-size="10" fill="#666">"炒饭，做好"</text>
+
+  <line x1="700" y1="150" x2="725" y2="150" stroke="#22c55e" stroke-width="2" marker-end="url(#arrow3)"/>
+
+  <rect x="730" y="100" width="140" height="100" rx="10" fill="#16213e" stroke="#0ea5e9" stroke-width="1.5"/>
+  <text x="800" y="135" text-anchor="middle" font-size="32">🛎️</text>
+  <text x="800" y="160" text-anchor="middle" font-size="13" font-weight="600" fill="#e0e0e0">上菜</text>
+  <text x="800" y="185" text-anchor="middle" font-size="11" fill="#aaa">输出节点</text>
+  <text x="800" y="200" text-anchor="middle" font-size="10" fill="#666">"请用餐"</text>
+
+  <!-- n8n parallel -->
+  <text x="450" y="270" text-anchor="middle" font-size="16" font-weight="700" fill="#e94560">n8n 画布上完全对应</text>
+
+  <rect x="40" y="300" width="200" height="100" rx="10" fill="#16213e" stroke="#e94560" stroke-width="1.5"/>
+  <text x="140" y="335" text-anchor="middle" font-size="12" font-weight="600" fill="#e0e0e0">Schedule Trigger</text>
+  <text x="140" y="355" text-anchor="middle" font-size="11" fill="#888">定时触发器</text>
+  <text x="140" y="378" text-anchor="middle" font-size="10" fill="#666">"每天9点触发"</text>
+
+  <line x1="240" y1="350" x2="265" y2="350" stroke="#e94560" stroke-width="2"/>
+
+  <rect x="270" y="300" width="200" height="100" rx="10" fill="#16213e" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="370" y="335" text-anchor="middle" font-size="12" font-weight="600" fill="#e0e0e0">HTTP Request</text>
+  <text x="370" y="355" text-anchor="middle" font-size="11" fill="#888">HTTP 请求节点</text>
+  <text x="370" y="378" text-anchor="middle" font-size="10" fill="#666">"去抓 RSS 数据"</text>
+
+  <line x1="470" y1="350" x2="495" y2="350" stroke="#f59e0b" stroke-width="2"/>
+
+  <rect x="500" y="300" width="200" height="100" rx="10" fill="#16213e" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="600" y="335" text-anchor="middle" font-size="12" font-weight="600" fill="#e0e0e0">AI Agent</text>
+  <text x="600" y="355" text-anchor="middle" font-size="11" fill="#888">AI 处理节点</text>
+  <text x="600" y="378" text-anchor="middle" font-size="10" fill="#666">"筛选有价值的资讯"</text>
+
+  <line x1="700" y1="350" x2="725" y2="350" stroke="#22c55e" stroke-width="2"/>
+
+  <rect x="730" y="300" width="140" height="100" rx="10" fill="#16213e" stroke="#0ea5e9" stroke-width="1.5"/>
+  <text x="800" y="335" text-anchor="middle" font-size="12" font-weight="600" fill="#e0e0e0">Telegram</text>
+  <text x="800" y="355" text-anchor="middle" font-size="11" fill="#888">输出节点</text>
+  <text x="800" y="378" text-anchor="middle" font-size="10" fill="#666">"推送给你"</text>
+
+  <!-- Key insight -->
+  <rect x="200" y="440" width="500" height="40" rx="8" fill="#0f3460" stroke="#e94560" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="450" y="465" text-anchor="middle" font-size="13" font-weight="600" fill="#e94560">核心：数据像菜一样在节点间流动，每个节点只做一件事</text>
+
+  <defs>
+    <marker id="arrow1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#e94560"/>
+    </marker>
+    <marker id="arrow2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrow3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#22c55e"/>
+    </marker>
+  </defs>
+</svg>
