@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 680" font-family="-apple-system, Noto Sans SC, sans-serif">
+  <rect width="900" height="680" fill="#1a1a2e"/>
+
+  <!-- Title -->
+  <text x="450" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="#e0e0e0">n8n 自动化 — 从手动到自动的四级阶梯</text>
+  <text x="450" y="66" text-anchor="middle" font-size="13" fill="#888">Level 0 → Level 3 带你从「复制粘贴」走到「AI 自主决策」</text>
+
+  <!-- Level 0 -->
+  <rect x="60" y="100" width="370" height="120" rx="10" fill="#16213e" stroke="#0f3460" stroke-width="1.5"/>
+  <text x="75" y="130" font-size="13" font-weight="700" fill="#e94560">LEVEL 0 — 规则自动化</text>
+  <text x="75" y="150" font-size="12" fill="#aaa">IFTTT 式 IF-THEN，无 AI</text>
+  <text x="75" y="168" font-size="12" fill="#888">📋 场景：每天早上 9:00 给我发邮件提醒</text>
+  <text x="75" y="190" font-size="12" fill="#888">🔧 工具：Google Calendar → Gmail</text>
+  <text x="75" y="210" font-size="12" fill="#666">确定性流程，固定输入=固定输出</text>
+
+  <!-- Level 1 -->
+  <rect x="60" y="250" width="370" height="120" rx="10" fill="#16213e" stroke="#0f3460" stroke-width="1.5"/>
+  <text x="75" y="280" font-size="13" font-weight="700" fill="#533483">LEVEL 1 — 流程自动化 (RPA)</text>
+  <text x="75" y="300" font-size="12" fill="#aaa">模拟人工操作，点击+填写</text>
+  <text x="75" y="318" font-size="12" fill="#888">📋 场景：把抖音数据手动复制到 Excel</text>
+  <text x="75" y="340" font-size="12" fill="#888">🔧 工具：浏览器扩展 + 宏命令</text>
+  <text x="75" y="360" font-size="12" fill="#666">替手不替脑，动作自动化但不动脑</text>
+
+  <!-- Level 2 -->
+  <rect x="60" y="400" width="370" height="120" rx="10" fill="#16213e" stroke="#0f3460" stroke-width="1.5"/>
+  <text x="75" y="430" font-size="13" font-weight="700" fill="#0ea5e9">LEVEL 2 — AI 辅助自动化</text>
+  <text x="75" y="450" font-size="12" fill="#aaa">关键节点嵌入 LLM 处理不确定输入</text>
+  <text x="75" y="468" font-size="12" fill="#888">📋 场景：群消息自动总结 + 人工审核</text>
+  <text x="75" y="490" font-size="12" fill="#888">🔧 工具：n8n + OpenAI + Code 节点</text>
+  <text x="75" y="510" font-size="12" fill="#666">流程不变，AI 帮你处理"看不懂"的部分</text>
+
+  <!-- Level 3 -->
+  <rect x="60" y="550" width="370" height="120" rx="10" fill="#16213e" stroke="#0f3460" stroke-width="1.5"/>
+  <text x="75" y="580" font-size="13" font-weight="700" fill="#22c55e">LEVEL 3 — AI 原生工作流</text>
+  <text x="75" y="600" font-size="12" fill="#aaa">LLM 驱动决策，Agent 自主编排</text>
+  <text x="75" y="618" font-size="12" fill="#888">📋 场景：告诉我主题 → AI 生成视频 → 自动发布</text>
+  <text x="75" y="640" font-size="12" fill="#888">🔧 工具：n8n AI Agent + 工具链</text>
+  <text x="75" y="660" font-size="12" fill="#666">AI 决定流程怎么走，你只管提需求</text>
+
+  <!-- n8n position -->
+  <rect x="500" y="280" width="370" height="330" rx="14" fill="#1a1a2e" stroke="#e94560" stroke-width="2" stroke-dasharray="8 4"/>
+  <text x="685" y="315" text-anchor="middle" font-size="16" font-weight="700" fill="#e94560">🎯 n8n 的核心定位</text>
+  <text x="685" y="345" text-anchor="middle" font-size="12" fill="#ccc">覆盖 Level 2 → Level 3</text>
+
+  <rect x="520" y="365" width="330" height="220" rx="8" fill="#0f3460" opacity="0.4"/>
+  <text x="535" y="390" font-size="11" font-weight="600" fill="#7dd3fc">为什么是 n8n？</text>
+  <text x="535" y="412" font-size="12" fill="#ccc">✅ 开源免费（MIT 许可）</text>
+  <text x="535" y="434" font-size="12" fill="#ccc">✅ 可视化拖拽，零代码搭建</text>
+  <text x="535" y="456" font-size="12" fill="#ccc">✅ 原生 AI Agent 支持</text>
+  <text x="535" y="478" font-size="12" fill="#ccc">✅ 自托管，数据主权在自己</text>
+  <text x="535" y="500" font-size="12" fill="#ccc">✅ 每个节点可写 JS 代码</text>
+  <text x="535" y="522" font-size="12" fill="#ccc">✅ 150+ 社区节点扩展</text>
+
+  <!-- Arrows -->
+  <line x1="430" y1="160" x2="495" y2="160" stroke="#e94560" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+  <line x1="430" y1="310" x2="495" y2="310" stroke="#533483" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <line x1="430" y1="460" x2="495" y2="460" stroke="#0ea5e9" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+  <line x1="430" y1="610" x2="495" y2="610" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+
+  <defs>
+    <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#e94560"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#533483"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#0ea5e9"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#22c55e"/>
+    </marker>
+  </defs>
+</svg>
