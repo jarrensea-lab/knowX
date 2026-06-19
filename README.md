@@ -1,109 +1,97 @@
-# 恭喜发财 V7 — Codex 自动化 A 股智能助手
+# knowX — AI Agent 编排工程师学习平台
 
-> 基于 DeepSeek 云端 AI + 飞书全通道交互的个人量化交易助手
+> 基于飞书 + Claude Code 的 AI Agent 编排工程师学习系统
 
-## V7 核心变化
-
-| V6 | V7 |
-|-----|-----|
-| Vue3 Web 前端 | ❌ 砍掉，全部交互走飞书 |
-| Ollama 本地 35B 模型 | DeepSeek v4-pro 云端 API (月均 ¥2.2) |
-| AKShare 爬虫阻塞 | Tushare + a-stock-data 多源 |
-| 飞书 Webhook 单一推送 | 飞书全通道 (消息卡片/多维表格/文档/画板/任务) |
-| 手动运维 | Codex 交易日守护进程 |
-
-## 架构
+## 核心架构
 
 ```
-Codex 交易日守护
-    │
-    ├── FastAPI 后端 (仅 API 服务, 无前端)
-    │   ├── DeepSeek v4-pro/v4-flash 云端 AI
-    │   ├── Tushare + Tencent 数据源
-    │   ├── 模拟交易引擎 (风控/撮合/信号)
-    │   └── SQLite 本地存储
-    │
-    └── 飞书 App (全通道交互)
-        ├── 消息卡片: 盘前策略/风险预警/午盘简报/系统日报
-        ├── 多维表格: 选股池/回测/持仓/绩效
-        ├── 飞书文档: 策略报告/复盘/周报
-        ├── 画板: K线标注图/收益曲线
-        └── 任务: 止盈止损提醒
+┌──────────────────────────────────────┐
+│        飞书群「内阁」                  │
+│  knowX（学习助手）  │  lark-agent    │
+└────────┬─────────────────────────────┘
+         │
+         ▼
+  ┌──────────────┐
+  │  knowX 系统   │
+  │ SYSTEM.md    │
+  └──────┬───────┘
+         │
+         ▼
+  ┌──────────────┐
+  │ data/graph.db│
+  │ 知识图谱      │
+  └──────────────┘
 ```
 
-## 快速开始
+## 功能
 
-### 1. 配置
+### 知识图谱学习
 
-```bash
-cp .env.example .env.local
-# 编辑 .env.local:
-#   DEEPSEEK_API_KEY=sk-xxx
-#   TUSHARE_TOKEN=xxx
-#   FEISHU_WEBHOOK_URL=https://open.feishu.cn/...
-```
+- 节点驱动的个性化学习路径
+- 每日课程卡片 + 自动简报推送
+- 测验 + 实践代码评判训练
+- 文章投喂 → 自动关联知识点
+- 技术新闻筛选
 
-### 2. 安装依赖
+### 飞书交互指令
 
-```bash
-pip install -r requirements.txt
-```
+| 指令 | 功能 |
+|------|------|
+| `knowX 今天学什么` | 生成课程卡片 |
+| `knowX 我学会了 <知识点>` | 标记掌握，推荐下一课 |
+| `knowX 图谱` | 查看知识图谱全貌 |
+| `knowX 进度` | 查看学习进度 |
+| `knowX 简报` | 生成日报 |
+| `knowX 考我` | 知识测验 |
+| `knowX 实操` | 代码评判训练 |
 
-### 3. 启动
+### n8n 自动化课程
 
-```bash
-# 直接启动
-python backend/app/main.py
-
-# 或通过守护进程
-./scripts/guardian.sh &
-```
-
-## 每日自动化流程
-
-```
-08:55 启动检查 (API/DeepSeek/飞书)
-09:00 盘前 AI 辩论 + 建仓计划 + 选股池 → 飞书
-11:30 午盘快速分析 → 飞书卡片
-14:00 午后风险检查
-15:00 收盘复盘 → 飞书文档
-15:30 系统日报 → 飞书卡片
-```
-
-## 飞书对话指令
-
-```
-买入 688347 华虹公司 100股 ¥250.5
-卖出 688347 100股 ¥255
-清仓 688347
-查询持仓
-今日策略
-```
-
-## 成本
-
-DeepSeek API: 约 ¥0.10/交易日，月均 ¥2.20
+完整的 AI 自动化大师课笔记（6 模块 29 课）。
 
 ## 项目结构
 
 ```
-cong-xi-fa-cai-v6/
-├── backend/
-│   └── app/
-│       ├── ai/          # AI 引擎 (DeepSeek + fallback)
-│       ├── data_sources/ # 数据源 (Tushare/Tencent)
-│       ├── engine/      # 分析/回测/生命周期
-│       ├── services/    # 飞书通道/指令解析
-│       ├── trading_engine/ # 模拟交易
-│       └── utils/       # 缓存/日志/交易日历
-├── scripts/
-│   └── guardian.sh      # 交易日守护进程
-└── docs/
-    └── superpowers/specs/ # 设计文档
+knowX/
+├── data/
+│   ├── graph.db              # 知识图谱 (SQLite)
+│   ├── courses/              # 课程笔记 (n8n)
+│   ├── mypkg/                # 工具模块
+│   └── news_cache/           # 新闻缓存
+├── docs/                     # 文档
+│   ├── architecture/         # 架构设计
+│   ├── strategies/           # 交易策略
+│   ├── trading-knowledge/    # 交易知识
+│   └── superpowers/          # 系统设计文档
+├── scripts/                  # 运维脚本
+│   ├── polling-agent.sh      # 飞书消息轮询
+│   └── knowx-news.sh         # 新闻抓取
+├── SYSTEM.md                 # knowX 行为规则
+├── AGENTS.md                 # Claude Code 入口配置
+└── ROADMAP.md                # 开发路线图
 ```
 
-## 安全
+## 运行方式
 
-- 所有敏感信息在 `.env.local` (已 gitignore)
-- 交易数据本地 SQLite 存储
-- AI 调用通过 DeepSeek API (数据不用于训练)
+1. Claude Code 打开本目录，自动加载 `SYSTEM.md` 作为系统提示词
+2. 运行 `./scripts/polling-agent.sh start` 启动飞书消息轮询
+3. 在飞书群中向 knowX 发送指令即可交互
+4. 自动简报：每天早上 7:00 推送
+
+## 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| AI 模型 | Claude Code + DeepSeek |
+| 数据库 | SQLite（知识图谱） |
+| 交互层 | 飞书全通道 |
+| Agent 框架 | Claude Code + MCP |
+| 自动化 | n8n（工作流引擎） |
+
+## 数据文件
+
+| 文件 | 说明 |
+|------|------|
+| `data/graph.db` | 知识图谱 SQLite（nodes / edges / progress） |
+| `config.json` | 群 ID、推送时间、新闻源 |
+| `SYSTEM.md` | 完整行为规则 |
